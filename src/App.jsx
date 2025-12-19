@@ -1,14 +1,17 @@
 import { useState } from "react";
-import { Footer } from "./components/Footer";
-import { SearchBar } from "./components/SearchBar";
-import { UnitSelect } from "./components/UnitSelect";
-import { WeatherCard } from "./components/WeatherCard";
-import { DateDisplay } from "./components/DateDisplay";
-import { Alert } from "./components/Alert";
+import {
+  Alert,
+  DateDisplay,
+  Footer,
+  LoadingSpinner,
+  SearchBar,
+  WeatherCard,
+  WeatherAppContainer,
+} from "./components";
+import { fetchWeatherData } from "./weatherApi";
 
 import "./index.css";
-
-const API_KEY = "21571e236ae1e7500c50aabca16ad13c";
+import { Header } from "./components/Header";
 
 function App() {
   const [weatherData, setWeatherData] = useState(null);
@@ -17,79 +20,56 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [currentCity, setCurrentCity] = useState("");
 
-  const fetchWeatherData = async (city, tempUnit = unit) => {
-    if (!city || typeof city !== "string") {
-      setError("Please enter a valid city name");
-      return null;
+  const handleSearch = async (city) => {
+    if (!city) {
+      setError("Please enter a city name");
+      return;
     }
 
     setLoading(true);
     setError("");
 
-    try {
-      const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=${tempUnit}`;
-      console.log("Fetching URL:", url);
-      const response = await fetch(url);
+    const result = await fetchWeatherData(city, unit);
 
-      if (!response.ok) {
-        throw new Error("City not found");
-      }
-
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      setError(error.message);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearch = async (location) => {
-    const data = await fetchWeatherData(location);
-    if (data) {
-      setWeatherData(data);
-      setCurrentCity(location);
+    if (result.status === "success") {
+      setWeatherData(result.data);
+      setCurrentCity(city);
     } else {
+      setError(result.error);
       setWeatherData(null);
     }
+
+    setLoading(false);
   };
 
   const handleUnitChange = async (newUnit) => {
     setUnit(newUnit);
 
-    if (currentCity) {
-      fetchWeatherData(currentCity, newUnit).then((data) => {
-        if (data) {
-          setWeatherData(data);
-        }
-      });
-    } else if (weatherData?.name) {
-      fetchWeatherData(weatherData.name, newUnit).then((data) => {
-        if (data) {
-          setWeatherData(data);
-        }
-      });
+    if (weatherData?.name) {
+      const result = await fetchWeatherData(weatherData.name, newUnit);
+
+      if (result.status === "success") {
+        setWeatherData(result.data);
+      } else {
+        setError(result.error);
+      }
     }
   };
 
   return (
-    <div className="main">
-      <header>
-        <h1>Weather App</h1>
-        <UnitSelect unit={unit} onUnitChange={handleUnitChange} />
-      </header>
+    <WeatherAppContainer>
+      <Header unit={unit} onUnitChange={handleUnitChange} />
 
       <DateDisplay />
 
       <SearchBar onSearch={handleSearch} loading={loading} />
 
-      {loading && <p>Загрузка</p>}
+      {loading && <LoadingSpinner />}
       {error && <Alert message={error} />}
       {weatherData && <WeatherCard weatherData={weatherData} unit={unit} />}
 
       <Footer />
-    </div>
+    </WeatherAppContainer>
   );
 }
 
