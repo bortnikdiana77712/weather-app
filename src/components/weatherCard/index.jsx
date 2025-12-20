@@ -1,5 +1,5 @@
-import { WeatherDetail } from "./";
-import { formatTemp, getWeatherIcon } from "../utils";
+import { WeatherDetail } from "./WeatherDetail";
+import { MainInfo } from "./MainInfo";
 
 export const WeatherCard = ({ weatherData, unit }) => {
   if (!weatherData) return null;
@@ -8,27 +8,13 @@ export const WeatherCard = ({ weatherData, unit }) => {
     <div className="weather-card">
       <h2>{weatherData.name}</h2>
 
-      <div className="main-info">
-        <div className="current-temp">{formatTemp(weatherData.main.temp, unit)}</div>
-
-        <div className="info">
-          <img
-            src={getWeatherIcon(weatherData.weather[0].icon)}
-            alt={weatherData.weather[0].description}
-            className="weather-icon"
-          />
-
-          <div className="description">
-            {weatherData.weather[0].description}
-          </div>
-        </div>
-      </div>
+      <MainInfo weatherData={weatherData} unit={unit} />
 
       <div className="details">
         <WeatherDetail
           label="Feels like:"
           value={formatTemp(weatherData.main.feels_like, unit)}
-        ></WeatherDetail>
+        />
 
         <WeatherDetail
           label="Max temp:"
